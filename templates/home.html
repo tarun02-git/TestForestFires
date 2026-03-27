@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Forest Fire Prediction</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0c0e0f;
+      --surface:   #141618;
+      --border:    #2a2d30;
+      --accent:    #ff5c1a;
+      --accent2:   #ffab40;
+      --text:      #edecea;
+      --muted:     #6b6e72;
+      --input-bg:  #1c1f22;
+      --success:   #4caf7d;
+    }
+
+    body {
+      font-family: 'DM Mono', monospace;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+      background-image:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(255,92,26,0.12) 0%, transparent 70%),
+        url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.02'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+
+    .wrapper {
+      width: 100%;
+      max-width: 780px;
+      animation: fadeUp 0.6s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Header ── */
+    .header {
+      margin-bottom: 2.5rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 1.2rem;
+    }
+
+    .flame-icon {
+      width: 48px;
+      height: 48px;
+      flex-shrink: 0;
+      margin-top: 4px;
+    }
+
+    .header-text h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(1.6rem, 4vw, 2.2rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      background: linear-gradient(135deg, #ff5c1a 0%, #ffab40 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header-text p {
+      margin-top: 0.4rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2), transparent);
+    }
+
+    /* ── Section label ── */
+    .section-label {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Grid ── */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1.2rem;
+      margin-bottom: 1.8rem;
+    }
+
+    /* ── Field ── */
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    label {
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    label .tag {
+      font-size: 0.62rem;
+      background: rgba(255,92,26,0.12);
+      color: var(--accent);
+      border: 1px solid rgba(255,92,26,0.25);
+      border-radius: 4px;
+      padding: 1px 5px;
+      letter-spacing: 0.04em;
+    }
+
+    input[type="number"],
+    input[type="text"] {
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.9rem;
+      padding: 0.65rem 0.9rem;
+      width: 100%;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+      -moz-appearance: textfield;
+    }
+
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(255,92,26,0.12);
+    }
+
+    input::placeholder { color: var(--muted); opacity: 0.6; }
+
+    /* ── Divider ── */
+    .divider { margin: 1.8rem 0; border: none; border-top: 1px solid var(--border); }
+
+    /* ── Submit ── */
+    .submit-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .hint {
+      font-size: 0.73rem;
+      color: var(--muted);
+    }
+
+    .hint span { color: var(--accent2); }
+
+    button[type="submit"] {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      background: linear-gradient(135deg, #ff5c1a, #ff7a40);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 0.75rem 2rem;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 20px rgba(255,92,26,0.35);
+    }
+
+    button[type="submit"]:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(255,92,26,0.45);
+    }
+
+    button[type="submit"]:active { transform: translateY(0); }
+
+    button[type="submit"]::after {
+      content: ' →';
+      opacity: 0.8;
+    }
+
+    /* ── Result banner (shown when Flask passes result) ── */
+    .result-banner {
+      margin-top: 1.8rem;
+      background: rgba(76,175,125,0.08);
+      border: 1px solid rgba(76,175,125,0.3);
+      border-radius: 10px;
+      padding: 1rem 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      font-size: 0.88rem;
+    }
+
+    .result-banner .dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--success);
+      flex-shrink: 0;
+      box-shadow: 0 0 8px var(--success);
+    }
+
+    @media (max-width: 520px) {
+      .card { padding: 1.5rem 1rem; }
+      .grid { grid-template-columns: 1fr 1fr; }
+      .submit-row { flex-direction: column; align-items: stretch; }
+      button[type="submit"] { text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="wrapper">
+
+  <!-- Header -->
+  <div class="header">
+    <svg class="flame-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M24 4C24 4 14 16 14 26C14 31.5 18.5 36 24 36C29.5 36 34 31.5 34 26C34 16 24 4 24 4Z" fill="url(#f1)"/>
+      <path d="M24 18C24 18 19 24 19 28C19 30.8 21.2 33 24 33C26.8 33 29 30.8 29 28C29 24 24 18 24 18Z" fill="url(#f2)"/>
+      <path d="M20 36C20 36 16 38 16 41C16 43.2 19.6 44 24 44C28.4 44 32 43.2 32 41C32 38 28 36 28 36" stroke="#ffab40" stroke-width="1.5" stroke-linecap="round"/>
+      <defs>
+        <linearGradient id="f1" x1="24" y1="4" x2="24" y2="36" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#ff5c1a"/>
+          <stop offset="1" stop-color="#ffab40"/>
+        </linearGradient>
+        <linearGradient id="f2" x1="24" y1="18" x2="24" y2="33" gradientUnits="userSpaceOnUse">
+          <stop stop-color="#fff" stop-opacity="0.9"/>
+          <stop offset="1" stop-color="#ffdd80"/>
+        </linearGradient>
+      </defs>
+    </svg>
+    <div class="header-text">
+      <h1>Forest Fire Prediction</h1>
+      <p>Algerian Forest Dataset — FWI Risk Estimation Model</p>
+    </div>
+  </div>
+
+  <!-- Form Card -->
+  <div class="card">
+
+    <!-- Weather Parameters -->
+    <div class="section-label">Weather Parameters</div>
+    <form action="/predictdata" method="POST">
+      <div class="grid">
+
+        <div class="field">
+          <label for="Temperature">Temperature <span class="tag">°C</span></label>
+          <input type="number" id="Temperature" name="Temperature" step="0.1" placeholder="e.g. 29.0" required />
+        </div>
+
+        <div class="field">
+          <label for="RH">Relative Humidity <span class="tag">%</span></label>
+          <input type="number" id="RH" name="RH" step="0.1" placeholder="e.g. 57.0" required />
+        </div>
+
+        <div class="field">
+          <label for="Ws">Wind Speed <span class="tag">km/h</span></label>
+          <input type="number" id="Ws" name="Ws" step="0.1" placeholder="e.g. 18.0" required />
+        </div>
+
+        <div class="field">
+          <label for="Rain">Rainfall <span class="tag">mm</span></label>
+          <input type="number" id="Rain" name="Rain" step="0.1" min="0" placeholder="e.g. 0.0" required />
+        </div>
+
+      </div>
+
+      <hr class="divider" />
+
+      <!-- FWI Index Parameters -->
+      <div class="section-label">FWI Index Parameters</div>
+      <div class="grid">
+
+        <div class="field">
+          <label for="FFMC">FFMC Index</label>
+          <input type="number" id="FFMC" name="FFMC" step="0.1" placeholder="e.g. 74.0" required />
+        </div>
+
+        <div class="field">
+          <label for="DMC">DMC Index</label>
+          <input type="number" id="DMC" name="DMC" step="0.1" placeholder="e.g. 26.9" required />
+        </div>
+
+        <div class="field">
+          <label for="ISI">ISI Index</label>
+          <input type="number" id="ISI" name="ISI" step="0.1" placeholder="e.g. 3.4" required />
+        </div>
+
+      </div>
+
+      <hr class="divider" />
+
+      <!-- Classification Parameters -->
+      <div class="section-label">Classification Parameters</div>
+      <div class="grid">
+
+        <div class="field">
+          <label for="Classes">Fire Class <span class="tag">0/1</span></label>
+          <input type="number" id="Classes" name="Classes" step="1" min="0" max="1" placeholder="0 = No Fire, 1 = Fire" required />
+        </div>
+
+        <div class="field">
+          <label for="Region">Region <span class="tag">0/1</span></label>
+          <input type="number" id="Region" name="Region" step="1" min="0" max="1" placeholder="0 = Bejaia, 1 = Sidi-Bel" required />
+        </div>
+
+      </div>
+
+      <hr class="divider" />
+
+      <!-- Submit -->
+      <div class="submit-row">
+        <p class="hint">All fields are required. Values must be <span>numeric</span>.</p>
+        <button type="submit">Predict Fire Risk</button>
+      </div>
+
+    </form>
+
+    <!-- Result Banner — Flask renders this block when result is available -->
+    {% if result %}
+    <div class="result-banner">
+      <div class="dot"></div>
+      <div>Predicted FWI Score: <strong>{{ result }}</strong></div>
+    </div>
+    {% endif %}
+
+  </div><!-- /card -->
+
+</div><!-- /wrapper -->
+
+</body>
+</html>
